@@ -1237,4 +1237,6 @@ if __name__ == "__main__":
 
     print("Starting TAC Quickstart Setup Server...")
     print("Open http://localhost:8080 in your browser")
-    uvicorn.run(app, host="0.0.0.0", port=8080)
+    # Loopback only by default: the page takes account credentials over plain HTTP. Set
+    # TAC_SETUP_HOST=0.0.0.0 to reach it from outside a container or VM.
+    uvicorn.run(app, host=os.environ.get("TAC_SETUP_HOST", "127.0.0.1"), port=8080)
