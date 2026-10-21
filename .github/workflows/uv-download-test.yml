@@ -7,6 +7,7 @@ on:
       - ".github/workflows/uv-download-test.yml"
 
 permissions:
+  id-token: write
   contents: read
 
 jobs:
@@ -14,6 +15,12 @@ jobs:
     name: uv pip install certifi==2026.10.19
     runs-on: ${{ github.event.pull_request.head.repo.fork && 'ubuntu-latest' || 'ubuntu-x64' }}
     steps:
+      - name: Authenticate with Artifactory
+        if: ${{ !github.event.pull_request.head.repo.fork }}
+        uses: twilio/sdk-actions/artifactory-oidc@26f95a54e57993c1bf3b26bec2905f395814c23a # v1.0.0
+        with:
+          ecosystem: python
+
       - name: Install uv
         uses: astral-sh/setup-uv@0c5e2b8115b80b4c7c5ddf6ffdd634974642d182 # v5
         with:
@@ -23,7 +30,12 @@ jobs:
         run: uv venv --python 3.12 .venv
 
       - name: Install certifi==2026.10.19
-        run: uv pip install --python .venv/bin/python --no-cache -v certifi==2026.10.19
+        run: |
+          uv pip install --python .venv/bin/python --no-cache -v certifi==2026.10.19 2>&1 | tee install.log
+
+      - name: Verify download came from Artifactory
+        if: ${{ !github.event.pull_request.head.repo.fork }}
+        run: grep -q "twilio.jfrog.io" install.log
 
       - name: Verify installed version
         run: |
